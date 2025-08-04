@@ -1,6 +1,14 @@
 import './App.css';
+import { useState } from 'react';
 
 function App() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState('No query executed yet');
+
+  const runQuery = () => {
+    setResults(`You ran: ${query}`);
+  };
+
   return (
     <div className="App">
       <header>
@@ -12,18 +20,20 @@ function App() {
         <div className="query-section">
           <h3>Write your SQL query:</h3>
           <textarea 
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="SELECT * FROM users;"
             rows="8"
             cols="80"
           />
           <br />
-          <button>Run Query</button>
+          <button onClick={runQuery}>Run Query</button>
         </div>
         
         <div className="results-section">
           <h3>Results:</h3>
           <div className="results-area">
-            No query executed yet
+            {results}
           </div>
         </div>
       </main>
