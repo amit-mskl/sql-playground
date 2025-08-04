@@ -1,12 +1,34 @@
 import './App.css';
 import { useState } from 'react';
 
+// Sample database tables
+const sampleData = {
+  users: [
+    { id: 1, name: 'John Doe', email: 'john@email.com', age: 25 },
+    { id: 2, name: 'Jane Smith', email: 'jane@email.com', age: 30 },
+    { id: 3, name: 'Bob Wilson', email: 'bob@email.com', age: 35 }
+  ],
+  orders: [
+    { id: 101, user_id: 1, product: 'Laptop', amount: 999.99 },
+    { id: 102, user_id: 2, product: 'Phone', amount: 599.99 },
+    { id: 103, user_id: 1, product: 'Mouse', amount: 29.99 }
+  ]
+};
+
 function App() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState('No query executed yet');
 
   const runQuery = () => {
-    setResults(`You ran: ${query}`);
+    const lowerQuery = query.toLowerCase().trim();
+    
+    if (lowerQuery.includes('select * from users')) {
+      setResults(JSON.stringify(sampleData.users, null, 2));
+    } else if (lowerQuery.includes('select * from orders')) {
+      setResults(JSON.stringify(sampleData.orders, null, 2));
+    } else {
+      setResults('Query not supported yet. Try: SELECT * FROM users or SELECT * FROM orders');
+    }
   };
 
   return (
