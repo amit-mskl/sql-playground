@@ -112,8 +112,8 @@ function App() {
       {/* Main Content */}
       <div style={{flex: 1, padding: '20px', overflowY: 'auto'}}>
         <header style={{textAlign: 'center', marginBottom: '30px'}}>
-          <h1 style={{margin: '0 0 10px 0', color: '#333'}}>SQL Playground</h1>
-          <p style={{margin: 0, color: '#666'}}>Practice SQL queries interactively</p>
+          <h1 style={{margin: '0 0 10px 0', color: '#333'}}>Enqurious SQL Arena</h1>
+          <p style={{margin: 0, color: '#666'}}>Practice SQL queries interactively on GlobalMart's Database</p>
         </header>
         
         <main>
