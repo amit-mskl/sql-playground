@@ -8,7 +8,7 @@ function App() {
 
   // Fetch available tables on component mount
   useEffect(() => {
-    fetch('http://localhost:3001/api/tables')
+    fetch('https://sql-playground-background.onrender.com/api/tables')
       .then(res => res.json())
       .then(data => setAvailableTables(data.tables || []))
       .catch(err => console.error('Error fetching tables:', err));
@@ -16,7 +16,7 @@ function App() {
 
   const runQuery = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/query', {
+      const response = await fetch('https://sql-playground-background.onrender.com/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sql: query })
