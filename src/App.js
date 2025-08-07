@@ -1,8 +1,9 @@
 import './App.css';
 import { useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
 
 function App() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('SELECT * FROM ex_customers LIMIT 10;');
   const [results, setResults] = useState('No query executed yet');
   const [availableTables, setAvailableTables] = useState([]);
   const [expandedTables, setExpandedTables] = useState({});
@@ -220,23 +221,38 @@ function App() {
         <main>
           <div className="query-section">
             <h3 style={{color: '#333'}}>Write your SQL query:</h3>
-            <textarea 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="SELECT * FROM ex_customers LIMIT 10;"
-              rows="6"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px',
-                fontFamily: 'Monaco, Consolas, monospace',
-                resize: 'vertical',
-                boxSizing: 'border-box',
-                marginBottom: '15px'
-              }}
-            />
+            <div style={{
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              marginBottom: '15px',
+              overflow: 'hidden'
+            }}>
+              <Editor
+                height="180px"
+                language="sql"
+                value={query}
+                onChange={(value) => setQuery(value || '')}
+                theme="light"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  fontSize: 14,
+                  fontFamily: 'Monaco, Consolas, monospace',
+                  lineNumbers: 'on',
+                  glyphMargin: false,
+                  folding: false,
+                  lineDecorationsWidth: 0,
+                  lineNumbersMinChars: 3,
+                  renderLineHighlight: 'line',
+                  tabSize: 2,
+                  insertSpaces: true,
+                  wordWrap: 'on',
+                  automaticLayout: true,
+                  formatOnPaste: true,
+                  formatOnType: true
+                }}
+              />
+            </div>
             <button 
               onClick={runQuery} 
               style={{
