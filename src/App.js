@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 
 function App() {
-  const [query, setQuery] = useState('SELECT * FROM ex_customers LIMIT 10;');
+  const [query, setQuery] = useState('SELECT * FROM dbo.ex_customers LIMIT 10;');
   const [results, setResults] = useState('No query executed yet');
   const [availableTables, setAvailableTables] = useState([]);
   const [expandedTables, setExpandedTables] = useState({});
