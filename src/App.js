@@ -175,17 +175,17 @@ const handleSignup = async (userData) => {
   // Download functions for DBML and starter prompts
   const downloadDBML = async () => {
     try {
-      const response = await fetch('/downloads/globalmart-schema.txt');
+      const response = await fetch('/downloads/globalmart-schema.png');
       if (!response.ok) {
         throw new Error('Failed to fetch DBML file');
       }
-      const dbmlContent = await response.text();
+      const dbmlContent = await response.blob();
       
-      const blob = new Blob([dbmlContent], { type: 'text/plain' });
+      const blob = new Blob([dbmlContent], { type: 'image/png' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'globalmart-schema.txt';
+      link.download = 'globalmart-schema.png';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -194,7 +194,7 @@ const handleSignup = async (userData) => {
       // Log download activity
       logActivity('download_dbml', null, {
         activityType: 'download_dbml',
-        fileName: 'globalmart-schema.txt',
+        fileName: 'globalmart-schema.png',
         timestamp: new Date().toISOString(),
         success: true
       }, true);
@@ -507,7 +507,7 @@ const handleSignup = async (userData) => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
               >
-                📄 Database Schema (DBML)
+                📄 Database Schema (ERD)
               </button>
               <button
                 onClick={downloadStarterPrompts}
