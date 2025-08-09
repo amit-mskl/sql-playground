@@ -1,23 +1,78 @@
 import './App.css';
 import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
+import { Login, Signup } from './components/Auth';
 
 function App() {
+  // Authentication state
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  
+  // SQL Editor state
   const [query, setQuery] = useState('SELECT * FROM dbo.ex_customers LIMIT 10;');
   const [results, setResults] = useState('No query executed yet');
   const [availableTables, setAvailableTables] = useState([]);
   const [expandedTables, setExpandedTables] = useState({});
   const [tableSchemas, setTableSchemas] = useState({});
 
-  // Fetch available tables on component mount
+  // Check for stored user session on component mount
   useEffect(() => {
-    fetch('https://sql-playground-background.onrender.com/api/tables')
-      .then(res => res.json())
-      .then(data => setAvailableTables(data.tables || []))
-      .catch(err => console.error('Error fetching tables:', err));
+    const storedUser = localStorage.getItem('sqlArenaUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
+  // Fetch available tables when user is logged in
+  useEffect(() => {
+    if (user) {
+      fetch('https://sql-playground-background.onrender.com/api/tables')
+        .then(res => res.json())
+        .then(data => setAvailableTables(data.tables || []))
+        .catch(err => console.error('Error fetching tables:', err));
+    }
+  }, [user]);
+
+  // Authentication handlers
+  const handleLogin = (userData) => {
+    setUser(userData);
+    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+  };
+
+  const handleSignup = (userData) => {
+    setUser(userData);
+    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('sqlArenaUser');
+    setQuery('SELECT * FROM dbo.ex_customers LIMIT 10;');
+    setResults('No query executed yet');
+  };
+
+  // Activity logging function
+  const logActivity = async (sqlQuery, executionResult, success) => {
+    try {
+      await fetch('https://sql-playground-background.onrender.com/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loginId: user.login_id,
+          sqlQuery: sqlQuery,
+          executionResult: executionResult,
+          success: success
+        })
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  };
+
+  // Enhanced runQuery function with activity logging
   const runQuery = async () => {
+    const startTime = Date.now();
+    
     try {
       const response = await fetch('https://sql-playground-background.onrender.com/api/query', {
         method: 'POST',
@@ -26,14 +81,38 @@ function App() {
       });
       
       const result = await response.json();
+      const executionTime = Date.now() - startTime;
       
       if (result.success) {
-        setResults(createTable(result.data));
+        const tableHtml = createTable(result.data);
+        setResults(tableHtml);
+        
+        // Log successful activity
+        await logActivity(query, {
+          rowCount: result.rowCount,
+          executionTime: executionTime,
+          success: true
+        }, true);
       } else {
         setResults(`Error: ${result.error}`);
+        
+        // Log failed activity
+        await logActivity(query, {
+          error: result.error,
+          executionTime: executionTime,
+          success: false
+        }, false);
       }
     } catch (error) {
+      const executionTime = Date.now() - startTime;
       setResults(`Connection error: ${error.message}`);
+      
+      // Log connection error
+      await logActivity(query, {
+        error: error.message,
+        executionTime: executionTime,
+        success: false
+      }, false);
     }
   };
 
@@ -71,14 +150,12 @@ function App() {
   };
 
   const handleTableClick = (tableName) => {
-    // Toggle table expansion
     const isExpanded = expandedTables[tableName];
     setExpandedTables(prev => ({
       ...prev,
       [tableName]: !isExpanded
     }));
 
-    // Fetch schema if not already loaded and expanding
     if (!isExpanded && !tableSchemas[tableName]) {
       fetchTableSchema(tableName);
     }
@@ -104,6 +181,26 @@ function App() {
     setQuery(`SELECT * FROM ${tableName} LIMIT 10;`);
   };
 
+  // Render authentication screens if user is not logged in
+  if (!user) {
+    if (authMode === 'login') {
+      return (
+        <Login 
+          onLogin={handleLogin} 
+          onSwitchToSignup={() => setAuthMode('signup')}
+        />
+      );
+    } else {
+      return (
+        <Signup 
+          onSignup={handleSignup} 
+          onSwitchToLogin={() => setAuthMode('login')}
+        />
+      );
+    }
+  }
+
+  // Render main application for logged-in users
   return (
     <div style={{display: 'flex', height: '100vh', fontFamily: 'Arial, sans-serif'}}>
       
@@ -115,13 +212,38 @@ function App() {
         padding: '20px',
         overflowY: 'auto'
       }}>
+        {/* User info */}
+        <div style={{
+          padding: '15px',
+          backgroundColor: '#fff',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #ddd'
+        }}>
+          <div style={{fontSize: '14px', color: '#666', marginBottom: '5px'}}>Welcome back!</div>
+          <div style={{fontWeight: 'bold', color: '#333', marginBottom: '10px'}}>{user.full_name}</div>
+          <button 
+            onClick={handleLogout}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+
         <h3 style={{margin: '0 0 20px 0', color: '#333'}}>Available Tables</h3>
         <div>
           {availableTables
             .filter(table => table.name !== 'sqlite_sequence')
             .map(table => (
             <div key={table.name}>
-              {/* Table Header */}
               <div 
                 onClick={() => handleTableClick(table.name)}
                 style={{
@@ -147,7 +269,6 @@ function App() {
                 </span>
               </div>
 
-              {/* Schema Details */}
               {expandedTables[table.name] && (
                 <div style={{
                   marginLeft: '10px',
