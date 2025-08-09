@@ -1,3 +1,5 @@
+// Updated App.js - Add login/logout tracking to existing activity table
+
 import './App.css';
 import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
@@ -6,7 +8,7 @@ import { Login, Signup } from './components/Auth';
 function App() {
   // Authentication state
   const [user, setUser] = useState(null);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [authMode, setAuthMode] = useState('login');
   
   // SQL Editor state
   const [query, setQuery] = useState('SELECT * FROM dbo.ex_customers LIMIT 10;');
@@ -33,40 +35,90 @@ function App() {
     }
   }, [user]);
 
-  // Authentication handlers
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+  // Enhanced activity logging function
+  const logActivity = async (activityType, sqlQuery = null, executionResult = null, success = true, customLoginId = null) => {
+    try {
+      const loginId = customLoginId || (user ? user.login_id : null);
+      
+      if (!loginId) {
+        console.error('No login ID available for activity logging');
+        return;
+      }
+
+      const activityData = {
+        loginId: loginId,
+        sqlQuery: sqlQuery || `[${activityType.toUpperCase()}]`,
+        executionResult: executionResult || { 
+          activityType: activityType,
+          timestamp: new Date().toISOString(),
+          success: success 
+        },
+        success: success
+      };
+
+      await fetch('https://sql-playground-background.onrender.com/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activityData)
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
   };
 
-  const handleSignup = (userData) => {
+  // Enhanced authentication handlers with logging
+  const handleLogin = async (userData) => {
     setUser(userData);
     localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+    
+    // Log login activity - pass loginId directly since user state isn't set yet
+    await logActivity('login', null, {
+      activityType: 'login',
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      success: true
+    }, true, userData.login_id); // Pass loginId directly
   };
 
-  const handleLogout = () => {
+  const handleSignup = async (userData) => {
+    setUser(userData);
+    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+    
+    // Log signup activity - pass loginId directly since user state isn't set yet
+    await logActivity('signup', null, {
+      activityType: 'signup', 
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      success: true
+    }, true, userData.login_id); // Pass loginId directly
+  };
+
+  const handleLogout = async () => {
+    // Log logout activity before clearing user
+    if (user) {
+      await logActivity('logout', null, {
+        activityType: 'logout',
+        timestamp: new Date().toISOString(),
+        sessionDuration: calculateSessionDuration(),
+        success: true
+      }, true); // Use default user.login_id from logActivity function
+    }
+    
     setUser(null);
     localStorage.removeItem('sqlArenaUser');
     setQuery('SELECT * FROM dbo.ex_customers LIMIT 10;');
     setResults('No query executed yet');
   };
 
-  // Activity logging function
-  const logActivity = async (sqlQuery, executionResult, success) => {
-    try {
-      await fetch('https://sql-playground-background.onrender.com/api/log-activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loginId: user.login_id,
-          sqlQuery: sqlQuery,
-          executionResult: executionResult,
-          success: success
-        })
-      });
-    } catch (error) {
-      console.error('Error logging activity:', error);
+  // Calculate session duration
+  const calculateSessionDuration = () => {
+    const storedUser = localStorage.getItem('sqlArenaUser');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      const loginTime = userData.loginTime || Date.now();
+      return Math.round((Date.now() - loginTime) / 1000); // Duration in seconds
     }
+    return 0;
   };
 
   // Enhanced runQuery function with activity logging
@@ -87,32 +139,35 @@ function App() {
         const tableHtml = createTable(result.data);
         setResults(tableHtml);
         
-        // Log successful activity
-        await logActivity(query, {
+        // Log successful query activity
+        await logActivity('sql_query', query, {
+          activityType: 'sql_query',
           rowCount: result.rowCount,
           executionTime: executionTime,
           success: true
-        }, true);
+        }, true); // Use default user.login_id
       } else {
         setResults(`Error: ${result.error}`);
         
-        // Log failed activity
-        await logActivity(query, {
+        // Log failed query activity
+        await logActivity('sql_query', query, {
+          activityType: 'sql_query',
           error: result.error,
           executionTime: executionTime,
           success: false
-        }, false);
+        }, false); // Use default user.login_id
       }
     } catch (error) {
       const executionTime = Date.now() - startTime;
       setResults(`Connection error: ${error.message}`);
       
       // Log connection error
-      await logActivity(query, {
+      await logActivity('sql_query', query, {
+        activityType: 'sql_query',
         error: error.message,
         executionTime: executionTime,
         success: false
-      }, false);
+      }, false); // Use default user.login_id
     }
   };
 
