@@ -72,9 +72,64 @@
     font-size: 14px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
     background-color: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .password-input-container input {
+    padding-right: 50px; /* Increased space for the eye icon */
+  }
+  
+  .password-toggle {
+    position: absolute;
+    right: 16px; /* More space from the edge */
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px; /* More padding for better click area */
+    transition: color 0.3s ease;
+    z-index: 1;
+  }
+  
+  .password-toggle:hover {
+    color: #007bff;
+  }
+  
+  .password-toggle:focus {
+    outline: none;
+    color: #007bff;
+  }
+  
+  .password-toggle svg {
+    width: 18px; /* Slightly larger icon */
+    height: 18px;
+  }
+  
+  /* Required field asterisk styling */
+  .required-asterisk {
+    color: #e53e3e;
+    margin-left: 4px;
+    font-weight: bold;
   }
   
   .form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    background-color: white;
+  }
+  
+  .password-input-container input:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);

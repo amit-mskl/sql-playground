@@ -35,63 +35,64 @@ function App() {
     }
   }, [user]);
 
-  // Enhanced activity logging function
-  const logActivity = async (activityType, sqlQuery = null, executionResult = null, success = true, customLoginId = null) => {
-    try {
-      const loginId = customLoginId || (user ? user.login_id : null);
-      
-      if (!loginId) {
-        console.error('No login ID available for activity logging');
-        return;
-      }
-
-      const activityData = {
-        loginId: loginId,
-        sqlQuery: sqlQuery || `[${activityType.toUpperCase()}]`,
-        executionResult: executionResult || { 
-          activityType: activityType,
-          timestamp: new Date().toISOString(),
-          success: success 
-        },
-        success: success
-      };
-
-      await fetch('https://sql-playground-background.onrender.com/api/log-activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(activityData)
-      });
-    } catch (error) {
-      console.error('Error logging activity:', error);
+// Enhanced activity logging function
+const logActivity = async (activityType, sqlQuery = null, executionResult = null, success = true, customLoginId = null) => {
+  try {
+    // Use email as loginId for new users, fallback to login_id for existing users
+    const loginId = customLoginId || (user ? (user.email || user.login_id) : null);
+    
+    if (!loginId) {
+      console.error('No login ID available for activity logging');
+      return;
     }
-  };
 
-  // Enhanced authentication handlers with logging
-  const handleLogin = async (userData) => {
-    setUser(userData);
-    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
-    
-    // Log login activity - pass loginId directly since user state isn't set yet
-    await logActivity('login', null, {
-      activityType: 'login',
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      success: true
-    }, true, userData.login_id); // Pass loginId directly
-  };
+    const activityData = {
+      loginId: loginId,
+      sqlQuery: sqlQuery || `[${activityType.toUpperCase()}]`,
+      executionResult: executionResult || { 
+        activityType: activityType,
+        timestamp: new Date().toISOString(),
+        success: success 
+      },
+      success: success
+    };
 
-  const handleSignup = async (userData) => {
-    setUser(userData);
-    localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
-    
-    // Log signup activity - pass loginId directly since user state isn't set yet
-    await logActivity('signup', null, {
-      activityType: 'signup', 
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      success: true
-    }, true, userData.login_id); // Pass loginId directly
-  };
+    await fetch('https://sql-playground-background.onrender.com/api/log-activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(activityData)
+    });
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
+};
+
+// Enhanced authentication handlers with logging
+const handleLogin = async (userData) => {
+  setUser(userData);
+  localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+  
+  // Log login activity - use email as loginId for new email-based users
+  await logActivity('login', null, {
+    activityType: 'login',
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    success: true
+  }, true, userData.email || userData.login_id); // Use email first, fallback to login_id
+};
+
+const handleSignup = async (userData) => {
+  setUser(userData);
+  localStorage.setItem('sqlArenaUser', JSON.stringify(userData));
+  
+  // Log signup activity - use email as loginId for new email-based users
+  await logActivity('signup', null, {
+    activityType: 'signup', 
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    success: true
+  }, true, userData.email || userData.login_id); // Use email first, fallback to login_id
+};
 
   const handleLogout = async () => {
     // Log logout activity before clearing user
