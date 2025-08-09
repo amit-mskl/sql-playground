@@ -1,4 +1,4 @@
-// Updated App.js - Add login/logout tracking to existing activity table
+// Updated App.js - Add download section above SQL query input
 
 import './App.css';
 import { useState, useEffect } from 'react';
@@ -169,6 +169,69 @@ const handleSignup = async (userData) => {
         executionTime: executionTime,
         success: false
       }, false); // Use default user.login_id
+    }
+  };
+
+  // Download functions for DBML and starter prompts
+  const downloadDBML = async () => {
+    try {
+      const response = await fetch('/downloads/globalmart-schema.txt');
+      if (!response.ok) {
+        throw new Error('Failed to fetch DBML file');
+      }
+      const dbmlContent = await response.text();
+      
+      const blob = new Blob([dbmlContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'globalmart-schema.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      // Log download activity
+      logActivity('download_dbml', null, {
+        activityType: 'download_dbml',
+        fileName: 'globalmart-schema.txt',
+        timestamp: new Date().toISOString(),
+        success: true
+      }, true);
+    } catch (error) {
+      console.error('Error downloading DBML file:', error);
+      alert('Failed to download database schema. Please try again later.');
+    }
+  };
+
+  const downloadStarterPrompts = async () => {
+    try {
+      const response = await fetch('/downloads/sql_starter_prompts.txt');
+      if (!response.ok) {
+        throw new Error('Failed to fetch starter prompts file');
+      }
+      const promptsContent = await response.text();
+      
+      const blob = new Blob([promptsContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'sql_starter_prompts.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      // Log download activity
+      logActivity('download_prompts', null, {
+        activityType: 'download_prompts',
+        fileName: 'sql_starter_prompts.txt',
+        timestamp: new Date().toISOString(),
+        success: true
+      }, true);
+    } catch (error) {
+      console.error('Error downloading starter prompts file:', error);
+      alert('Failed to download starter prompts. Please try again later.');
     }
   };
 
@@ -396,6 +459,80 @@ const handleSignup = async (userData) => {
         </header>
         
         <main>
+          {/* NEW: Download Resources Section */}
+          <div style={{
+            backgroundColor: '#f8f9fa',
+            border: '1px solid #e9ecef',
+            borderRadius: '8px',
+            padding: '20px',
+            marginBottom: '25px'
+          }}>
+            <h4 style={{
+              margin: '0 0 15px 0', 
+              color: '#333',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              📚 How to start?
+            </h4>
+            <p style={{
+              margin: '0 0 15px 0',
+              color: '#666',
+              fontSize: '14px'
+            }}>
+              Go to your favorite chatbot (ChatGPT, Gemini, Claude), upload the schema file (DBML) and copy paste the prompt from the Starter prompts and follow your AI mentor's advice :)
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={downloadDBML}
+                style={{
+                  padding: '10px 16px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
+              >
+                📄 Database Schema (DBML)
+              </button>
+              <button
+                onClick={downloadStarterPrompts}
+                style={{
+                  padding: '10px 16px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
+              >
+                💡 Starter prompts
+              </button>
+            </div>
+          </div>
+
           <div className="query-section">
             <h3 style={{color: '#333'}}>Write your SQL query:</h3>
             <div style={{
