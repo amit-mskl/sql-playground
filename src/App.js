@@ -555,7 +555,7 @@ const handleSignup = async (userData) => {
                   lineNumbers: 'on',
                   glyphMargin: false,
                   folding: false,
-                  lineDecorationsWidth: 0,
+                  lineDecorationsWidth: 10,
                   lineNumbersMinChars: 3,
                   renderLineHighlight: 'line',
                   tabSize: 2,
