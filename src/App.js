@@ -481,7 +481,7 @@ const handleSignup = async (userData) => {
               color: '#666',
               fontSize: '14px'
             }}>
-              Go to your favorite chatbot (ChatGPT, Gemini, Claude), upload the schema file (DBML) and copy paste the prompt from the Starter prompts and follow your AI mentor's advice :)
+              Go to your favorite chatbot (ChatGPT, Gemini, Claude), upload the E-R Diagram and copy paste the prompt from the Starter prompts and follow your AI mentor's advice :)
             </p>
             <div style={{
               display: 'flex',
@@ -507,7 +507,7 @@ const handleSignup = async (userData) => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
               >
-                📄 Database Schema (ERD)
+                📄 E-R Diagram
               </button>
               <button
                 onClick={downloadStarterPrompts}
