@@ -1,4 +1,4 @@
-// Updated App.js - Add download section above SQL query input
+// Updated App.js - Add paste blocking to encourage typing
 
 import './App.css';
 import { useState, useEffect } from 'react';
@@ -235,6 +235,113 @@ const handleSignup = async (userData) => {
     }
   };
 
+  // NEW: Function to handle Monaco Editor mounting and paste blocking
+  const handleEditorDidMount = (editor, monaco) => {
+    // Add paste event listener to block pasting
+    editor.onKeyDown((e) => {
+      // Check for Ctrl+V (Windows/Linux) or Cmd+V (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Show friendly message
+        showPasteBlockedMessage();
+        
+        // Log paste attempt
+        logActivity('paste_blocked', null, {
+          activityType: 'paste_blocked',
+          timestamp: new Date().toISOString(),
+          message: 'User attempted to paste code',
+          success: true
+        }, true);
+      }
+    });
+
+    // Also block right-click paste option
+    editor.addAction({
+      id: 'block-paste',
+      label: 'Paste (Disabled for Learning)',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
+      run: () => {
+        showPasteBlockedMessage();
+        return null;
+      }
+    });
+
+    // Block context menu paste
+    const contextMenuService = editor._contextMenuService;
+    if (contextMenuService) {
+      const originalShowContextMenu = contextMenuService.showContextMenu;
+      contextMenuService.showContextMenu = function(delegate) {
+        // Filter out paste-related actions
+        if (delegate && delegate.getActions) {
+          const originalGetActions = delegate.getActions;
+          delegate.getActions = function() {
+            const actions = originalGetActions.call(this);
+            return actions.filter(action => 
+              action.id !== 'editor.action.clipboardPasteAction' && 
+              action.label !== 'Paste'
+            );
+          };
+        }
+        return originalShowContextMenu.call(this, delegate);
+      };
+    }
+  };
+
+  // NEW: Function to show friendly paste blocked message
+  const showPasteBlockedMessage = () => {
+    // Create a custom notification overlay
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px 35px;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+      ">
+        <div style="font-size: 24px; margin-bottom: 10px;">👋</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+          Hey friend! 
+        </div>
+        <div style="font-size: 14px; line-height: 1.4; opacity: 0.95;">
+          I'd encourage you to slow down and type your code. This makes you think better and learn the concepts more effectively! 🧠✨
+        </div>
+        <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+          This message will disappear in 4 seconds
+        </div>
+      </div>
+      <style>
+        @keyframes slideIn {
+          from { opacity: 0; transform: translate(-50%, -60%); }
+          to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+      </style>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 4 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }
+    }, 4000);
+  };
+
   const createTable = (data) => {
     if (data.length === 0) return 'No rows found';
     
@@ -459,7 +566,7 @@ const handleSignup = async (userData) => {
         </header>
         
         <main>
-          {/* NEW: Download Resources Section */}
+          {/* Download Resources Section */}
           <div style={{
             backgroundColor: '#f8f9fa',
             border: '1px solid #e9ecef',
@@ -546,6 +653,7 @@ const handleSignup = async (userData) => {
                 language="sql"
                 value={query}
                 onChange={(value) => setQuery(value || '')}
+                onMount={handleEditorDidMount} // NEW: Add paste blocking handler
                 theme="light"
                 options={{
                   minimap: { enabled: false },
